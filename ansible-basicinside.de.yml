@@ -1,0 +1,19 @@
+- hosts: basicinside.de
+  sudo: yes
+  vars:
+   - docroot: /var/www/
+   - local_docroot: ./docroot/
+  tasks:
+   - name: Install Apache2
+     apt: pkg=apache2 state=installed update_cache=true
+     register: apache2_installed
+
+   - name: Create Web Root
+     when: apache2_installed|success
+     file: dest="{{ docroot }}" mode=775 state=directory owner=www-data group=www-data
+     register: webroot_installed
+
+   - name: Sync Web Root
+     when: webroot_installed|success
+     copy: src="{{item}}" dest="{{docroot}}/"
+     with_lines: find "{{local_docroot}}" -type f
