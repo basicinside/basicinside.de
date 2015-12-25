@@ -1,0 +1,25 @@
+<header class="site-header">
+
+<div class="wrapper">
+    <div>
+        <center>
+            <h5>
+                Robin Kuck <br />
+                <small>robin ( at ) basicinside ( dot ) de</small>
+            </h5>
+        </center>
+    </div>
+    <ul class="nav nav-tabs nav-justified">
+        {% for my_page in site.pages %}
+        {% if my_page.title %}
+        <li role="presentation" {% if my_page.url == page.url %} class="active" {% endif %}>
+            <a href="{{ my_page.url | prepend: site.baseurl }}">
+                <h5>{{ my_page.title }}</h5>
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+</header>

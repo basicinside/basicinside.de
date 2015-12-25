@@ -4,10 +4,12 @@ endif
 
 all: check deploy
 
-check: 
+check:
 	tidy ./docroot/*.html
+	tidy ./docroot/notes/*.html
 
-deploy: 
+deploy:
+	cd ./jekyll/ && jekyll build
 	ansible-playbook ansible-basicinside.de.yml
 
 .PHONY: all check deploy
