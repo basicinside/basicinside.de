@@ -11,4 +11,4 @@ deploy:
 clean:
 	cd ./jekyll/ && jekyll clean
 
-.PHONY: all check deploy
+.PHONY: all clean deploy
