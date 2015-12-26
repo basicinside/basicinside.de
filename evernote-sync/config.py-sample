@@ -1,0 +1,4 @@
+# Configure evernote-sync
+#
+
+EVERNOTE_API_TOKEN="<YOUR DEVELOPER API TOKEN>"
