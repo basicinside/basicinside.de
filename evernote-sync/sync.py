@@ -63,7 +63,12 @@ class Note(object):
         return re.sub("blog: ", "", self.note.title)
 
     def content_from_evernote(self):
-        return re.sub("<.*?>", "", self.note.content)
+        content_without_html = re.sub("<.*?>", "", self.note.content)
+        content_proper_quotes = re.sub("&quot;", '"', content_without_html)
+        content_proper_gt = re.sub("&gt;", '>', content_proper_quotes)
+        content_proper_lt = re.sub("&lt;", '<', content_proper_gt)
+
+        return content_proper_lt
 
     def category_from_evernote(self):
         categories = []
