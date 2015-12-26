@@ -12,8 +12,10 @@ layout: default
 
         <h5>
           <small>({{ post.date | date: "%b %-d, %Y" }}) </small>
-          <a href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
         </h5>
+        <h4>
+           <a href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+        </h4>
       </li>
     {% endfor %}
   </ul>

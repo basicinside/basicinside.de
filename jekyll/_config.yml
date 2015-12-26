@@ -19,4 +19,5 @@ xing_username: Robin_Kuck
 
 
 # Build settings
-markdown: kramdown
+markdown: redcarpet
+highlighter: pygments
