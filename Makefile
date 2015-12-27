@@ -5,7 +5,7 @@ endif
 all: deploy
 
 deploy:
-	evernote-sync/env/bin/python evernote-sync/sync.py
+	cd evernote-sync/ && env/bin/evernote-sync
 	cd ./jekyll/ && jekyll build
 	ansible-playbook ansible-basicinside.de.yml
 

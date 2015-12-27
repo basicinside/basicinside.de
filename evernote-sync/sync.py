@@ -1,10 +1,11 @@
-import evernote.edam.type.ttypes as Types
-import evernote.edam.notestore.ttypes as NoteStore
-import os
-import re
-
+from __future__ import unicode_literals
+from BeautifulSoup import BeautifulSoup
 from datetime import datetime
 from evernote.api.client import EvernoteClient
+import evernote.edam.notestore.ttypes as NoteStore
+import re
+import os
+
 try:
     from config import EVERNOTE_API_TOKEN
 except ImportError:
@@ -14,7 +15,7 @@ except ImportError:
     """)
 
 
-POST_DIR= os.path.normpath(
+POST_DIR = os.path.normpath(
     os.path.dirname(os.path.realpath(__file__)) + "/../jekyll/_posts/")
 POST_TEMPLATE = ("""---
 layout: post
@@ -63,12 +64,26 @@ class Note(object):
         return re.sub("blog: ", "", self.note.title)
 
     def content_from_evernote(self):
-        content_without_html = re.sub("<.*?>", "", self.note.content)
-        content_proper_quotes = re.sub("&quot;", '"', content_without_html)
-        content_proper_gt = re.sub("&gt;", '>', content_proper_quotes)
-        content_proper_lt = re.sub("&lt;", '<', content_proper_gt)
-
-        return content_proper_lt
+        def html2markdown(html):
+            # replace non-letters
+            html = re.sub(r'[^\x00-\x7F]+', '', html)
+            # replace links
+            soup = BeautifulSoup(html)
+            for a in soup.findAll('a'):
+                a.replaceWith("[{}]({})".format(a.text, a.get('href')))
+            # remove tags
+            markdown = re.sub(r'<.*?>', '', str(soup))
+            # replace html entities
+            html_replacements = [
+                ('&quot;', '"'),
+                ('&gt;', '>'),
+                ('&lt;', '<'),
+            ]
+            for original, replacement in html_replacements:
+                markdown = re.sub(original, replacement, markdown)
+            markdown = markdown.encode('ascii', 'xmlcharrefreplace')
+            return markdown
+        return html2markdown(self.note.content)
 
     def category_from_evernote(self):
         categories = []
@@ -105,4 +120,5 @@ def main():
         post_fd.close()
 
 
-main()
+if __name__ == "__main__":
+    main()
