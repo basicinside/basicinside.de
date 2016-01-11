@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
+from base64 import b64encode
 from BeautifulSoup import BeautifulSoup
 from datetime import datetime
 from evernote.api.client import EvernoteClient
 import evernote.edam.notestore.ttypes as NoteStore
+import md5
 import re
 import os
 
@@ -31,18 +33,18 @@ class NoteBook(object):
     def __init__(self, note_store):
         self.note_store = note_store
 
-    def get_notes(self, filter="blog: "):
+    def get_notes(self, filter="blog:"):
         notes = []
         note_filter = NoteStore.NoteFilter()
-        note_filter.words = 'intitle:"{}"'.format(filter)
+        note_filter.words = 'intitle:"blog: "'
         notes_metadata_result_spec = NoteStore.NotesMetadataResultSpec()
 
         notes_metadata_list = self.note_store.findNotesMetadata(
-            note_filter, 0, 1, notes_metadata_result_spec)
+            note_filter, 0, 99, notes_metadata_result_spec)
         for note_entry in notes_metadata_list.notes:
             note_guid = note_entry.guid
             note = self.note_store.getNote(
-                note_guid, True, False, False, False)
+                note_guid, True, True, False, True)
             notes.append(Note(note, self))
         return notes
 
@@ -51,6 +53,13 @@ class Note(object):
     def __init__(self, note, notebook):
         self.note = note
         self.notebook = notebook
+        self.resources = {}
+        # build a dictionary of all resources
+        # media hash => base64 encoded media data
+        if self.note.resources:
+            for resource in self.note.resources:
+                digest = md5.new(resource.data.body).hexdigest()
+                self.resources[digest] = b64encode(resource.data.body)
 
     def updated_from_evernote(self):
         return datetime.fromtimestamp(
@@ -70,7 +79,14 @@ class Note(object):
             # replace links
             soup = BeautifulSoup(html)
             for a in soup.findAll('a'):
-                a.replaceWith("[{}]({})".format(a.text, a.get('href')))
+                a.replaceWith("[{}]({}) ".format(a.text, a.get('href')))
+            # replace evernote media tags with inline image tags
+            for media in soup.findAll('en-media'):
+                media.replaceWith(
+                    "<img src='data:{};base64,{}' style='{}' />".format(
+                        media.get('type'), self.resources[media.get('hash')],
+                        media.get('style')))
+
             # remove tags
             markdown = re.sub(r'<.*?>', '', str(soup))
             # replace html entities
@@ -86,11 +102,10 @@ class Note(object):
         return html2markdown(self.note.content)
 
     def category_from_evernote(self):
-        categories = []
-        for tagguid in self.note.tagGuids:
-            tagobj = self.notebook.note_store.getTag(tagguid)
-            categories.append(tagobj.name)
-        return " ".join(categories)
+        if self.note.tagGuids:
+            return self.notebook.note_store.getTag(self.note.tagGuids[0]).name
+        else:
+            return ""
 
     @property
     def filename(self):
@@ -101,10 +116,11 @@ class Note(object):
     def content(self):
         post = {
             'title': self.title_from_evernote(),
-            'last_updated': self.updated_from_evernote(),
+            'last_updated': self.created_from_evernote(),
             'categories': self.category_from_evernote(),
             'content': self.content_from_evernote(),
         }
+        print "Note generated: {}".format(post.get('title'))
         return POST_TEMPLATE.format(**post)
 
 
